@@ -33,7 +33,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  String _imageDir = '';
 
   void _selectDirectory() async {
     final extensions = Set<String>.from({'.png', '.jpg', '.jpeg', '.webp'});
@@ -41,72 +41,53 @@ class _MyHomePageState extends State<MyHomePage> {
         .getDirectoryPath(dialogTitle: 'Select image directory');
     if (dirPath != null) {
       // Scan all files in the directory
-      final imageDir = Directory(dirPath);
-      final files = imageDir.list();
-      await for (var entry in files) {
+      final dir = Directory(dirPath);
+
+      // Create thumbs dir
+      final thumbsDirPath = path.join(dirPath, '.thumbs');
+      final thumbsDir = Directory(thumbsDirPath);
+      if (!(await thumbsDir.exists())) {
+        await (thumbsDir.create());
+      }
+      await for (var entry in dir.list()) {
         final entryPath = entry.path;
         if (extensions.contains(path.extension(entryPath))) {
-          final file = File(entryPath);
-          final image = decodeImage(file.readAsBytesSync())!;
+          final imageFile = File(entryPath);
+          final image = decodeImage(imageFile.readAsBytesSync())!;
 
           // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
-          final thumbnail = copyResize(image, width: 120);
+          final thumbImage = copyResize(image, width: 120);
 
           // Save thumbnail
-
-          final thumbPath = path.withoutExtension(entryPath) + '_thumb.png';
-          debugPrint(thumbPath);
-          File(thumbPath).writeAsBytesSync(encodePng(thumbnail));
+          final thumbImagePath =
+              path.join(thumbsDirPath, '_' + path.basename(entryPath));
+          File(thumbImagePath).writeAsBytesSync(encodePng(thumbImage));
         }
       }
+
+      setState(() {
+        _imageDir = dirPath;
+      });
     } else {
       // User canceled
     }
-
-    setState(() {
-      _counter++;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'You have pushed the button this many times:',
+              'Image dir:',
             ),
             Text(
-              '$_counter',
+              _imageDir,
               style: Theme.of(context).textTheme.headline4,
             ),
           ],
@@ -114,9 +95,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _selectDirectory,
-        tooltip: 'Increment',
+        tooltip: 'Load dir',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
