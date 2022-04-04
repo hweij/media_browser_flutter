@@ -100,20 +100,18 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title + ': ' + _imageDir),
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             if (_status.isNotEmpty) Text(_status),
-            Row(children: [
+            Wrap(spacing: 20, runSpacing: 20, children: [
               for (var imgPath in _displayImages)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    child: Image.file(File(imgPath)),
-                    width: 128,
-                    height: 128,
-                  ),
+                SizedBox(
+                  child: Image.file(File(imgPath)),
+                  width: 128,
+                  height: 128,
                 ),
             ]),
           ],
