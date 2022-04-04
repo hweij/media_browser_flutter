@@ -44,12 +44,14 @@ class _MyHomePageState extends State<MyHomePage> {
       // Scan all files in the directory
       final dir = Directory(dirPath);
 
-      // Create thumbs dir
       final thumbsDirPath = path.join(dirPath, '.thumbs');
       final thumbsDir = Directory(thumbsDirPath);
+      // Create thumbs dir if it doesn't exist yet
       if (!(await thumbsDir.exists())) {
         await (thumbsDir.create());
       }
+
+      // Process file entries
       await for (var entry in dir.list()) {
         final entryPath = entry.path;
         if (extensions.contains(path.extension(entryPath).toLowerCase())) {
@@ -59,8 +61,16 @@ class _MyHomePageState extends State<MyHomePage> {
           final imageFile = File(entryPath);
           final image = imglib.decodeImage(imageFile.readAsBytesSync())!;
 
-          // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
-          final thumbImage = imglib.copyResize(image, width: 120);
+          int? w;
+          int? h;
+          if (image.width >= image.height) {
+            w = 128;
+          } else {
+            h = 128;
+          }
+
+          // Resize the image to a max 128x128 thumbnail (maintaining the aspect ratio).
+          final thumbImage = imglib.copyResize(image, width: w, height: h);
 
           // Save thumbnail
           final thumbImagePath = path.join(thumbsDirPath,
