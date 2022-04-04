@@ -35,26 +35,29 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
-  void _incrementCounter() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    );
-    if (result != null) {
-      final filePath = result.files.single.path;
-      if (filePath != null) {
-        final file = File(filePath);
-        final image = decodeImage(file.readAsBytesSync())!;
+  void _selectDirectory() async {
+    final extensions = Set<String>.from({'.png', '.jpg', '.jpeg', '.webp'});
+    final dirPath = await FilePicker.platform
+        .getDirectoryPath(dialogTitle: 'Select image directory');
+    if (dirPath != null) {
+      // Scan all files in the directory
+      final imageDir = Directory(dirPath);
+      final files = imageDir.list();
+      await for (var entry in files) {
+        final entryPath = entry.path;
+        if (extensions.contains(path.extension(entryPath))) {
+          final file = File(entryPath);
+          final image = decodeImage(file.readAsBytesSync())!;
 
-        // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
-        final thumbnail = copyResize(image, width: 120);
+          // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
+          final thumbnail = copyResize(image, width: 120);
 
-        // Save thumbnail
+          // Save thumbnail
 
-        final thumbPath =
-            path.basenameWithoutExtension(filePath) + '_thumb.jpg';
-        debugPrint(thumbPath);
-        File(thumbPath).writeAsBytesSync(encodeJpg(thumbnail));
+          final thumbPath = path.withoutExtension(entryPath) + '_thumb.png';
+          debugPrint(thumbPath);
+          File(thumbPath).writeAsBytesSync(encodePng(thumbnail));
+        }
       }
     } else {
       // User canceled
@@ -110,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: _selectDirectory,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
