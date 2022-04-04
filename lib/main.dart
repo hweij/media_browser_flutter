@@ -108,10 +108,15 @@ class _MyHomePageState extends State<MyHomePage> {
             if (_status.isNotEmpty) Text(_status),
             Wrap(spacing: 20, runSpacing: 20, children: [
               for (var imgPath in _displayImages)
-                SizedBox(
-                  child: Image.file(File(imgPath)),
-                  width: 128,
-                  height: 128,
+                GestureDetector(
+                  child: SizedBox(
+                    child: Image.file(File(imgPath)),
+                    width: 128,
+                    height: 128,
+                  ),
+                  onTap: () {
+                    debugPrint('Image $imgPath');
+                  },
                 ),
             ]),
           ],
