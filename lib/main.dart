@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Media Organizer',
       theme: ThemeData(primarySwatch: Colors.green),
-      home: const MyHomePage(title: 'Media Organizer'),
+      home: const MyHomePage(title: 'Browsing'),
     );
   }
 }
@@ -35,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _imageDir = '';
   String _status = '';
+  List<String> _displayImages = [];
 
   void _selectDirectory() async {
     final extensions = Set<String>.from({'.png', '.jpg', '.jpeg', '.webp'});
@@ -52,7 +53,10 @@ class _MyHomePageState extends State<MyHomePage> {
       }
 
       // Process file entries
+      List<String> thumbPaths = [];
       await for (var entry in dir.list()) {
+        // final stat = await entry.stat();
+        // final fileSize = stat.size;
         final entryPath = entry.path;
         if (extensions.contains(path.extension(entryPath).toLowerCase())) {
           setState(() {
@@ -76,12 +80,14 @@ class _MyHomePageState extends State<MyHomePage> {
           final thumbImagePath = path.join(thumbsDirPath,
               '_' + path.basenameWithoutExtension(entryPath) + '.png');
           await File(thumbImagePath).writeAsBytes(imglib.encodePng(thumbImage));
+          thumbPaths.add(thumbImagePath);
         }
       }
 
       setState(() {
-        _status = '';
+        _status = 'Processed ${_displayImages.length} images';
         _imageDir = dirPath;
+        _displayImages = thumbPaths;
       });
     } else {
       // User canceled
@@ -92,20 +98,24 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(widget.title + ': ' + _imageDir),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'Image dir:',
-            ),
             if (_status.isNotEmpty) Text(_status),
-            Text(
-              _imageDir,
-              style: Theme.of(context).textTheme.headline4,
-            ),
+            Row(children: [
+              for (var imgPath in _displayImages)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    child: Image.file(File(imgPath)),
+                    width: 128,
+                    height: 128,
+                  ),
+                ),
+            ]),
           ],
         ),
       ),
