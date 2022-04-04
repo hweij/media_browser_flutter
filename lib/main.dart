@@ -4,7 +4,7 @@ import 'package:path/path.dart' as path;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart';
+import 'package:image/image.dart' as imglib;
 
 void main() {
   runApp(const MyApp());
@@ -34,6 +34,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String _imageDir = '';
+  String _status = '';
 
   void _selectDirectory() async {
     final extensions = Set<String>.from({'.png', '.jpg', '.jpeg', '.webp'});
@@ -51,21 +52,25 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       await for (var entry in dir.list()) {
         final entryPath = entry.path;
-        if (extensions.contains(path.extension(entryPath))) {
+        if (extensions.contains(path.extension(entryPath).toLowerCase())) {
+          setState(() {
+            _status = 'Processing file $entryPath';
+          });
           final imageFile = File(entryPath);
-          final image = decodeImage(imageFile.readAsBytesSync())!;
+          final image = imglib.decodeImage(imageFile.readAsBytesSync())!;
 
           // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
-          final thumbImage = copyResize(image, width: 120);
+          final thumbImage = imglib.copyResize(image, width: 120);
 
           // Save thumbnail
-          final thumbImagePath =
-              path.join(thumbsDirPath, '_' + path.basename(entryPath));
-          File(thumbImagePath).writeAsBytesSync(encodePng(thumbImage));
+          final thumbImagePath = path.join(thumbsDirPath,
+              '_' + path.basenameWithoutExtension(entryPath) + '.png');
+          await File(thumbImagePath).writeAsBytes(imglib.encodePng(thumbImage));
         }
       }
 
       setState(() {
+        _status = '';
         _imageDir = dirPath;
       });
     } else {
@@ -86,6 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
             const Text(
               'Image dir:',
             ),
+            if (_status.isNotEmpty) Text(_status),
             Text(
               _imageDir,
               style: Theme.of(context).textTheme.headline4,
