@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:media_organizer_flutter/util.dart';
 
+import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -40,14 +41,14 @@ class _MyHomePageState extends State<MyHomePage> {
     final dirPath = await FilePicker.platform
         .getDirectoryPath(dialogTitle: 'Select image directory');
     if (dirPath != null) {
-      final thumbPaths =
-          await updateMediaInfo(dirPath, onProgress: (entryPath) {
+      final mediaInfo = await updateMediaInfo(dirPath, onProgress: (entryPath) {
         setState(() {
           _status = 'Processing file $entryPath';
         });
       });
       setState(() {
-        _displayImages = thumbPaths;
+        _displayImages =
+            mediaInfo.map((md) => path.join(dirPath, md.name)).toList();
         _status = 'Processed ${_displayImages.length} images';
         _imageDir = dirPath;
       });
