@@ -75,6 +75,7 @@ Future<List<MediaDescriptor>> updateMediaInfo(String dirPath,
   // Process file entries
   List<String> thumbPaths = [];
   List<MediaDescriptor> mediaDescriptors = [];
+  var encoder = imglib.PngEncoder(filter: imglib.PngEncoder.FILTER_SUB);
   await for (var entry in dir.list()) {
     final stat = await entry.stat();
     final entryPath = entry.path;
@@ -99,7 +100,7 @@ Future<List<MediaDescriptor>> updateMediaInfo(String dirPath,
       // Save thumbnail
       final thumbImagePath = path.join(thumbsDirPath,
           '_' + path.basenameWithoutExtension(entryPath) + '.png');
-      await File(thumbImagePath).writeAsBytes(imglib.encodePng(thumbImage));
+      await File(thumbImagePath).writeAsBytes(encoder.encodeImage(thumbImage));
       thumbPaths.add(thumbImagePath);
       final desc = MediaDescriptor(
           name: path.basename(entryPath),
