@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as imglib;
 
@@ -8,12 +7,8 @@ const infoFileName = '_info.txt';
 
 final extensions = Set<String>.from({'.png', '.jpg', '.jpeg', '.webp'});
 
-String formatDateTime(DateTime? dt) {
-  if (dt != null) {
-    return '${dt.year}${dt.month.toString().padLeft(2, '0')}${dt.day.toString().padLeft(2, '0')}';
-  } else {
-    return '';
-  }
+String formatDateTime(DateTime dt) {
+  return '${dt.year}${dt.month.toString().padLeft(2, '0')}${dt.day.toString().padLeft(2, '0')}';
 }
 
 DateTime parseDateTime(String s) {
@@ -28,12 +23,12 @@ class MediaDescriptor {
   final String name;
   final int size;
   final List<String> tags;
-  final DateTime? time;
+  final DateTime time;
 
   const MediaDescriptor({
-    this.name = '',
-    this.size = 0,
-    this.time,
+    required this.name,
+    required this.size,
+    required this.time,
     this.tags = const [],
   });
 
@@ -51,13 +46,6 @@ class MediaDescriptor {
         tags: fields[3].split('|'));
   }
 }
-
-// class MediaInfo {
-//   final String dir;
-//   final List<MediaDescriptor> media;
-
-//   MediaInfo(this.dir, this.media);
-// }
 
 /// Updates the media info (thumbs, index) for the given directory.
 Future<List<MediaDescriptor>> updateMediaInfo(String dirPath,
@@ -77,7 +65,6 @@ Future<List<MediaDescriptor>> updateMediaInfo(String dirPath,
   List<MediaDescriptor> mediaDescriptors = [];
   var encoder = imglib.PngEncoder(filter: imglib.PngEncoder.FILTER_SUB);
   await for (var entry in dir.list()) {
-    final stat = await entry.stat();
     final entryPath = entry.path;
     if (extensions.contains(path.extension(entryPath).toLowerCase())) {
       if (onProgress != null) {
@@ -102,21 +89,48 @@ Future<List<MediaDescriptor>> updateMediaInfo(String dirPath,
           '_' + path.basenameWithoutExtension(entryPath) + '.png');
       await File(thumbImagePath).writeAsBytes(encoder.encodeImage(thumbImage));
       thumbPaths.add(thumbImagePath);
+      // Collect stats and create media descriptor
+      final stat = await entry.stat();
       final desc = MediaDescriptor(
           name: path.basename(entryPath),
           size: stat.size,
           time: stat.modified,
           tags: []);
       mediaDescriptors.add(desc);
-      debugPrint(desc.toString());
     }
 
-    // TEST TEST
+    // Write media descriptors to media info
     final mdPath = path.join(thumbsDirPath, infoFileName);
     await File(mdPath)
         .writeAsString(mediaDescriptors.map((d) => d.toString()).join('\n'));
   }
   return mediaDescriptors;
+}
+
+/// Get a list of media descriptors for the given directory.
+/// If no list exists, null will be returned.
+Future<List<MediaDescriptor>?> getMediaInfo(String dir) async {
+  final mdPath = path.join(dir, thumbsDirName, infoFileName);
+  final mdFile = File(mdPath);
+  if (await mdFile.exists()) {
+    final List<MediaDescriptor> res = [];
+    final lines = await mdFile.readAsLines();
+    for (var line in lines) {
+      if (line.isNotEmpty) {
+        res.add(MediaDescriptor.parse(line));
+      }
+    }
+    return res;
+  } else {
+    return null;
+  }
+}
+
+String getImagePath(String dir, String img) {
+  return path.join(
+    dir,
+    img,
+  );
 }
 
 String getThumbPath(String dir, String img) {

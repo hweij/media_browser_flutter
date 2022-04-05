@@ -34,21 +34,30 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _imageDir = '';
   String _status = '';
-  List<String> _displayImages = [];
+  String _viewImage = '';
+  List<MediaDescriptor> _mediaDescriptors = [];
 
   void _selectDirectory() async {
     final dirPath = await FilePicker.platform
         .getDirectoryPath(dialogTitle: 'Select image directory');
     if (dirPath != null) {
-      final mediaInfo = await updateMediaInfo(dirPath, onProgress: (entryPath) {
-        setState(() {
-          _status = 'Processing file $entryPath';
+      var mediaInfo = await getMediaInfo(dirPath);
+      if (mediaInfo == null) {
+        debugPrint('No media info found, updating..');
+        mediaInfo = await updateMediaInfo(dirPath, onProgress: (entryPath) {
+          setState(() {
+            _status = 'Processing file $entryPath';
+          });
         });
-      });
+      }
+      for (var md in mediaInfo) {
+        debugPrint(md.toString());
+      }
       setState(() {
-        _displayImages =
-            mediaInfo.map((md) => getThumbPath(dirPath, md.name)).toList();
-        _status = 'Processed ${_displayImages.length} images';
+        if (mediaInfo != null) {
+          _mediaDescriptors = mediaInfo;
+        }
+        _status = 'Processed ${_mediaDescriptors.length} images';
         _imageDir = dirPath;
       });
     } else {
@@ -64,23 +73,31 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            if (_status.isNotEmpty) Text(_status),
-            Wrap(spacing: 20, runSpacing: 20, children: [
-              for (var imgPath in _displayImages)
-                GestureDetector(
-                  child: SizedBox(
-                    child: Image.file(File(imgPath)),
-                    width: 128,
-                    height: 128,
-                  ),
-                  onTap: () {
-                    debugPrint('Image $imgPath');
-                  },
-                ),
-            ]),
+        child: Row(
+          children: [
+            Column(
+              children: [
+                if (_status.isNotEmpty) Text(_status),
+                Wrap(spacing: 20, runSpacing: 20, children: [
+                  for (var md in _mediaDescriptors)
+                    GestureDetector(
+                      child: SizedBox(
+                        child:
+                            Image.file(File(getThumbPath(_imageDir, md.name))),
+                        width: 128,
+                        height: 128,
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _viewImage = getImagePath(_imageDir, md.name);
+                        });
+                      },
+                    ),
+                ]),
+              ],
+            ),
+            if (_viewImage.isNotEmpty)
+              Image.file(File(getImagePath(_imageDir, _viewImage)))
           ],
         ),
       ),
