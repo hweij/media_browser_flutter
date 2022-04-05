@@ -117,3 +117,11 @@ Future<List<MediaDescriptor>> updateMediaInfo(String dirPath,
   }
   return mediaDescriptors;
 }
+
+String getThumbPath(String dir, String img) {
+  return path.join(
+    dir,
+    thumbsDirName,
+    '_' + path.basenameWithoutExtension(img) + '.png',
+  );
+}

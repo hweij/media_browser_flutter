@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:media_organizer_flutter/util.dart';
 
-import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -48,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
       setState(() {
         _displayImages =
-            mediaInfo.map((md) => path.join(dirPath, md.name)).toList();
+            mediaInfo.map((md) => getThumbPath(dirPath, md.name)).toList();
         _status = 'Processed ${_displayImages.length} images';
         _imageDir = dirPath;
       });
