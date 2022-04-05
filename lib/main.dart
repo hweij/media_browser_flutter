@@ -75,29 +75,33 @@ class _MyHomePageState extends State<MyHomePage> {
         padding: const EdgeInsets.all(20.0),
         child: Row(
           children: [
-            Column(
-              children: [
-                if (_status.isNotEmpty) Text(_status),
-                Wrap(spacing: 20, runSpacing: 20, children: [
-                  for (var md in _mediaDescriptors)
-                    GestureDetector(
-                      child: SizedBox(
-                        child:
-                            Image.file(File(getThumbPath(_imageDir, md.name))),
-                        width: 128,
-                        height: 128,
+            Expanded(
+              child: Column(
+                children: [
+                  if (_status.isNotEmpty) Text(_status),
+                  Wrap(spacing: 20, runSpacing: 20, children: [
+                    for (var md in _mediaDescriptors)
+                      GestureDetector(
+                        child: SizedBox(
+                          child: Image.file(
+                              File(getThumbPath(_imageDir, md.name))),
+                          width: 128,
+                          height: 128,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            _viewImage = getImagePath(_imageDir, md.name);
+                          });
+                        },
                       ),
-                      onTap: () {
-                        setState(() {
-                          _viewImage = getImagePath(_imageDir, md.name);
-                        });
-                      },
-                    ),
-                ]),
-              ],
+                  ]),
+                ],
+              ),
             ),
             if (_viewImage.isNotEmpty)
-              Image.file(File(getImagePath(_imageDir, _viewImage)))
+              Expanded(
+                  child: Image.file(File(getImagePath(_imageDir, _viewImage)))),
+            if (_viewImage.isEmpty) const Text("No image selected"),
           ],
         ),
       ),
