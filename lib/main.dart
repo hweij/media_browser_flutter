@@ -6,11 +6,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MediaOrganizer());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class MediaOrganizer extends StatelessWidget {
+  const MediaOrganizer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +32,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String _imageDir = '';
   String _status = '';
   String _viewImage = '';
   MediaCollectionInfo _mediaCollectionInfo =
-      MediaCollectionInfo(images: [], subdirectories: []);
+      MediaCollectionInfo(dirPath: '', images: [], subdirectories: []);
 
   void _selectDirectory() async {
     final dirPath = await FilePicker.platform
@@ -48,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> openImageDirectory(dirPath) async {
+  Future<void> openImageDirectory(String dirPath) async {
     var mediaInfo = await getMediaInfo(dirPath);
     if (mediaInfo == null) {
       debugPrint('No media info found, updating..');
@@ -66,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _mediaCollectionInfo = mediaInfo;
       }
       _status = 'Processed ${_mediaCollectionInfo.images.length} images';
-      _imageDir = dirPath;
+      mediaInfo?.dirPath = dirPath;
     });
   }
 
@@ -74,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title + ': ' + _imageDir),
+        title: Text(widget.title + ': ' + _mediaCollectionInfo.dirPath),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -93,7 +92,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       onTap: () {
                         setState(() {
-                          openImageDirectory(parentPath(_imageDir));
+                          openImageDirectory(
+                              parentPath(_mediaCollectionInfo.dirPath));
                         });
                       },
                     ),
@@ -106,21 +106,23 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         onTap: () {
                           setState(() {
-                            openImageDirectory(joinPath(_imageDir, sdName));
+                            openImageDirectory(
+                                joinPath(_mediaCollectionInfo.dirPath, sdName));
                           });
                         },
                       ),
                     for (var md in _mediaCollectionInfo.images)
                       GestureDetector(
                         child: SizedBox(
-                          child: Image.file(
-                              File(getThumbPath(_imageDir, md.name))),
+                          child: Image.file(File(getThumbPath(
+                              _mediaCollectionInfo.dirPath, md.name))),
                           width: 128,
                           height: 128,
                         ),
                         onTap: () {
                           setState(() {
-                            _viewImage = getImagePath(_imageDir, md.name);
+                            _viewImage = getImagePath(
+                                _mediaCollectionInfo.dirPath, md.name);
                           });
                         },
                       ),
@@ -130,7 +132,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             if (_viewImage.isNotEmpty)
               Expanded(
-                  child: Image.file(File(getImagePath(_imageDir, _viewImage)))),
+                  child: Image.file(File(
+                      getImagePath(_mediaCollectionInfo.dirPath, _viewImage)))),
             if (_viewImage.isEmpty) const Text("No image selected"),
           ],
         ),
