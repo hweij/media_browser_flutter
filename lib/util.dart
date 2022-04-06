@@ -27,7 +27,7 @@ class MediaDescriptor {
   final int size;
   final List<String> tags;
   final DateTime time;
-  final bool registered;
+  bool registered;
   bool exists;
 
   MediaDescriptor({
@@ -164,8 +164,7 @@ Future<MediaCollectionInfo?> getMediaInfo(String dir) async {
 /// this list contains all files found, merged with the files specified in the
 /// media_info folder. For each item, it is indicated whether the item file
 /// exists, and whether it is present in the index list.
-Future<void> getMediaInfoFromFiles(
-    MediaCollectionInfo mediaCollectionInfo) async {
+Future<void> getMediaInfo2(MediaCollectionInfo mediaCollectionInfo) async {
   // Create a map to quickly look up image file names
   final Map<String, MediaDescriptor> descMap = HashMap();
 
@@ -189,7 +188,7 @@ Future<void> getMediaInfoFromFiles(
   await for (var entry in dir.list()) {
     final baseName = path.basename(entry.path);
     // Ignore image info directory
-    if (baseName != infoFileName) {
+    if (baseName != thumbsDirName) {
       // Check if it has been registered
       final md = descMap[baseName];
       if (md != null) {
@@ -210,7 +209,7 @@ Future<void> getMediaInfoFromFiles(
                 name: baseName,
                 size: stat.size,
                 time: stat.modified,
-                registered: true,
+                registered: false,
                 exists: true);
             mediaCollectionInfo.images.add(md);
           }
@@ -221,13 +220,29 @@ Future<void> getMediaInfoFromFiles(
   }
 }
 
-void updateMediaInfoFiles(MediaCollectionInfo mci) {
-  final filteredImages =
-      mci.images.where((entry) => entry.registered && !entry.exists).toList();
-  if (filteredImages.length < mci.images.length) {
-    mci.images = filteredImages;
+Future<int> updateMediaInfoFiles(MediaCollectionInfo mci) async {
+  int numUpdates = 0;
+  for (final entry in mci.images) {
+    if (!entry.registered) {
+      // Not registered yet: generate thumb
+      await generateThumb(path.join(mci.dirPath, entry.name));
+      // Mark as registered
+      entry.registered = true;
+      numUpdates++;
+    }
   }
+  return numUpdates;
+}
+
+Future<void> writeMediaInfo(MediaCollectionInfo mci) async {
   // Update registry: write file
+  // Write media descriptors to media info
+  final thumbsDirPath = path.join(mci.dirPath, thumbsDirName);
+  final mdPath = path.join(thumbsDirPath, infoFileName);
+  await File(mdPath).writeAsString(mci.images
+      .where((entry) => entry.exists)
+      .map((d) => d.toString())
+      .join('\n'));
 }
 
 Future<void> generateThumb(String imagePath) async {

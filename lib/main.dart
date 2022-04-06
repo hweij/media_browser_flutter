@@ -47,25 +47,39 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // Future<void> openImageDirectory(String dirPath) async {
+  //   var mediaInfo = await getMediaInfo(dirPath);
+  //   if (mediaInfo == null) {
+  //     debugPrint('No media info found, updating..');
+  //     mediaInfo = await updateMediaInfo(dirPath, onProgress: (entryPath) {
+  //       setState(() {
+  //         _status = 'Processing file $entryPath';
+  //       });
+  //     });
+  //   }
+  //   for (var md in mediaInfo.images) {
+  //     debugPrint(md.toString());
+  //   }
+  //   setState(() {
+  //     if (mediaInfo != null) {
+  //       _mediaCollectionInfo = mediaInfo;
+  //     }
+  //     _status = 'Processed ${_mediaCollectionInfo.images.length} images';
+  //     mediaInfo?.dirPath = dirPath;
+  //   });
+  // }
+
   Future<void> openImageDirectory(String dirPath) async {
-    var mediaInfo = await getMediaInfo(dirPath);
-    if (mediaInfo == null) {
-      debugPrint('No media info found, updating..');
-      mediaInfo = await updateMediaInfo(dirPath, onProgress: (entryPath) {
-        setState(() {
-          _status = 'Processing file $entryPath';
-        });
-      });
-    }
-    for (var md in mediaInfo.images) {
-      debugPrint(md.toString());
+    final mci =
+        MediaCollectionInfo(dirPath: dirPath, images: [], subdirectories: []);
+    await getMediaInfo2(mci);
+    final numUpdates = await updateMediaInfoFiles(mci);
+    if (numUpdates > 0) {
+      writeMediaInfo(mci);
     }
     setState(() {
-      if (mediaInfo != null) {
-        _mediaCollectionInfo = mediaInfo;
-      }
+      _mediaCollectionInfo = mci;
       _status = 'Processed ${_mediaCollectionInfo.images.length} images';
-      mediaInfo?.dirPath = dirPath;
     });
   }
 
