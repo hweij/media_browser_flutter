@@ -35,34 +35,39 @@ class _MyHomePageState extends State<MyHomePage> {
   String _imageDir = '';
   String _status = '';
   String _viewImage = '';
-  List<MediaDescriptor> _mediaDescriptors = [];
+  MediaCollectionInfo _mediaCollectionInfo =
+      MediaCollectionInfo(images: [], subdirectories: []);
 
   void _selectDirectory() async {
     final dirPath = await FilePicker.platform
         .getDirectoryPath(dialogTitle: 'Select image directory');
     if (dirPath != null) {
-      var mediaInfo = await getMediaInfo(dirPath);
-      if (mediaInfo == null) {
-        debugPrint('No media info found, updating..');
-        mediaInfo = await updateMediaInfo(dirPath, onProgress: (entryPath) {
-          setState(() {
-            _status = 'Processing file $entryPath';
-          });
-        });
-      }
-      for (var md in mediaInfo) {
-        debugPrint(md.toString());
-      }
-      setState(() {
-        if (mediaInfo != null) {
-          _mediaDescriptors = mediaInfo;
-        }
-        _status = 'Processed ${_mediaDescriptors.length} images';
-        _imageDir = dirPath;
-      });
+      await openImageDirectory(dirPath);
     } else {
       // User canceled
     }
+  }
+
+  Future<void> openImageDirectory(dirPath) async {
+    var mediaInfo = await getMediaInfo(dirPath);
+    if (mediaInfo == null) {
+      debugPrint('No media info found, updating..');
+      mediaInfo = await updateMediaInfo(dirPath, onProgress: (entryPath) {
+        setState(() {
+          _status = 'Processing file $entryPath';
+        });
+      });
+    }
+    for (var md in mediaInfo.images) {
+      debugPrint(md.toString());
+    }
+    setState(() {
+      if (mediaInfo != null) {
+        _mediaCollectionInfo = mediaInfo;
+      }
+      _status = 'Processed ${_mediaCollectionInfo.images.length} images';
+      _imageDir = dirPath;
+    });
   }
 
   @override
@@ -80,7 +85,32 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: [
                   if (_status.isNotEmpty) Text(_status),
                   Wrap(spacing: 20, runSpacing: 20, children: [
-                    for (var md in _mediaDescriptors)
+                    GestureDetector(
+                      child: const SizedBox(
+                        child: Text('UP'),
+                        width: 128,
+                        height: 128,
+                      ),
+                      onTap: () {
+                        setState(() {
+                          openImageDirectory(parentPath(_imageDir));
+                        });
+                      },
+                    ),
+                    for (var sdName in _mediaCollectionInfo.subdirectories)
+                      GestureDetector(
+                        child: SizedBox(
+                          child: Text(sdName),
+                          width: 128,
+                          height: 128,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            openImageDirectory(joinPath(_imageDir, sdName));
+                          });
+                        },
+                      ),
+                    for (var md in _mediaCollectionInfo.images)
                       GestureDetector(
                         child: SizedBox(
                           child: Image.file(
